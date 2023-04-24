@@ -6,20 +6,29 @@ let database = {
       id: 0,
       firstName: 'Hendrik',
       lastName: 'van Dam',
-      emailAdress: 'hvd@server.nl'
-      // Hier de overige velden uit het functioneel ontwerp
+      emailAdress: 'hvd@server.nl',
+      isActive: '',
+      password: '',
+      phoneNumber: '',
+      roles: '',
+      street: '',
+      city: '',
     },
     {
       id: 1,
       firstName: 'Marieke',
       lastName: 'Jansen',
-      emailAdress: 'm@server.nl'
-      // Hier de overige velden uit het functioneel ontwerp
+      emailAdress: 'm@server.nl',
+      isActive: '',
+      password: '',
+      phoneNumber: '',
+      roles: '',
+      street: '',
+      city: '',
     }
   ],
 
-  // Ieder nieuw item in db krijgt 'autoincrement' index.
-  // Je moet die wel zelf toevoegen!
+
   index: 2
 };
 
