@@ -1,16 +1,41 @@
-const database = require('../util/database');
+const pool = require('../util/mysql-db');
 const logger = require('../util/utils').logger;
 const assert = require('assert');
+
 
 const userController = {
   getAllUsers: (req, res, next) => {
     logger.info('Get all users');
-    // er moet precies 1 response verstuurd worden.
-    const statusCode = 200;
-    res.status(statusCode).json({
-      status: statusCode,
-      message: 'User getAll endpoint',
-      data: database.users
+    let sqlStatement = 'SELECT * FROM `user`'
+
+    pool.getConnection(function (err, conn) {
+        if (err) {
+          logger.error(err.message)
+          next({
+            status: 500,
+            message: 'Failed to connect to the database' 
+          })
+        }
+        if (conn) {
+          conn.query(sqlStatement, function (err, results, fields) {
+            if (err) {
+              logger.err(err.message)
+              next({
+                status: 500,
+                message: 'Failed to retrieve user data'
+              })
+            }
+            if (results) {
+              logger.info('Found', results.length, 'results');
+              res.status(200).json({
+                status: 200,
+                message: 'User data endpoint',
+                data: results
+              })
+            }
+          })
+          pool.releaseConnection(conn);
+        }
     });
   },
 
@@ -22,42 +47,35 @@ const userController = {
     const user = req.body;
     logger.debug('user = ', user);
 
-    // Hier zie je hoe je binnenkomende user info kunt valideren.
-    try {
-      // assert(user === {}, 'Userinfo is missing');
-      assert(typeof user.firstName === 'string', 'firstName must be a string');
-      assert(
-        typeof user.emailAdress === 'string',
-        'emailAddress must be a string'
-      );
-    } catch (err) {
-      logger.warn(err.message.toString());
-      // Als één van de asserts failt sturen we een error response.
-      res.status(400).json({
-        status: 400,
-        message: err.message.toString(),
-        data: {}
-      });
-      // Nodejs is asynchroon. We willen niet dat de applicatie verder gaat
-      // wanneer er al een response is teruggestuurd.
-      return;
-    }
-
-    // Zorg dat de id van de nieuwe user toegevoegd wordt
-    // en hoog deze op voor de volgende insert.
-    user.id = database.index++;
-    // User toevoegen aan database
-    database['users'].push(user);
-    logger.info('New user added to database');
-
-    // Stuur het response terug
-    res.status(200).json({
-      status: 200,
-      message: `User met id ${user.id} is toegevoegd`,
-      // Wat je hier retourneert is een keuze; misschien wordt daar in het
-      // ontwerpdocument iets over gezegd.
-      data: user
-    });
+    const sqlStatement = 'INSERT INTO `user` SET ?'
+                pool.getConnection((err, conn) => {
+                    if (err) {
+                        logger.error(err.message);
+                        res.status(500).json({ 
+                            status: 500, 
+                            message: 'Failed to connect to the database' 
+                        });
+                        return;
+                    }
+                    conn.query(sqlStatement, user, (err, result) => {
+                        if (err) {
+                            logger.error(err.message);
+                            res.status(500).json({ 
+                                status: 500, 
+                                message: 'Failed to insert user data into the database' 
+                            });
+                            return;
+                        }
+                        user.id = result.insertId;
+                        logger.info('User registered successfully with ID:', result.insertId)
+                        res.status(201).json({ 
+                            status: 201, 
+                            message: 'Successfully registered user', 
+                            data: user 
+                        });
+                    })
+                    pool.releaseConnection(conn);
+                });
   },
 
   getUserProfile: (req, res) => {
@@ -70,66 +88,152 @@ const userController = {
 
   getUserById: (req, res) => {
     const userId = parseInt(req.params.userId);
-    const user = database.users.find((user) => user.id === userId);
+    let sqlStatement = 'SELECT * FROM `user` WHERE id = ?';
+    pool.getConnection((err, conn) => {
+      if (err) {
+        logger.error(err.message);
+        res.status(500).json({
+          status: 500,
+          message: 'Failed to connect to the database'
+        });
+        return;
+      }
 
-    if (user) {
-      res.status(200).json({
-        status: 200,
-        message: `User with id ${userId} found`,
-        data: user
+      conn.query(sqlStatement, [userId], (err, results) => {
+        pool.releaseConnection(conn);
+        if (err) {
+          logger.error(err.message);
+          res.status(500).json({
+            status: 500,
+            message: 'Failed to retrieve user'
+          });
+          return;
+        }
+
+        if (results.length > 0) {
+          res.status(200).json({
+            status: 200,
+            message: `User with id ${userId} found`,
+            data: results[0]
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message: `User with id ${userId} not found`,
+            data: {}
+          });
+        }
       });
-    } else {
-      res.status(404).json({
-        status: 404,
-        message: `User with id ${userId} not found`,
-        data: {}
-      });
-    }
+    });
   },
+
 
   updateUser: (req, res) => {
     const userId = parseInt(req.params.userId);
-    const userIndex = database.users.findIndex((user) => user.id === userId);
-
-    if (userIndex !== -1) {
-      const updatedUser = req.body;
-      updatedUser.id = userId;
-      database.users[userIndex] = updatedUser;
-
-      res.status(200).json({
-        status: 200,
-        message: `User with id ${userId} has been updated`,
-        data: updatedUser
+    const updatedUser = req.body;
+    logger.info(`Update user with id ${userId}`);
+    
+    let sqlStatement = 'UPDATE `user` SET ? WHERE `id` = ?';
+    pool.getConnection((err, conn) => {
+      if (err) {
+        logger.error(err.message);
+        res.status(500).json({
+          status: 500,
+          message: 'Failed to connect to the database'
+        });
+        return;
+      }
+  
+      conn.query(sqlStatement, [updatedUser, userId], (err, results) => {
+        pool.releaseConnection(conn);
+        if (err) {
+          logger.error(err.message);
+          res.status(500).json({
+            status: 500,
+            message: 'Failed to update user'
+          });
+          return;
+        }
+  
+        if (results.affectedRows > 0) {
+          res.status(200).json({
+            status: 200,
+            message: `User with id ${userId} has been updated`,
+            data: updatedUser
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message: `User with id ${userId} not found`,
+            data: {}
+          });
+        }
       });
-    } else {
-      res.status(404).json({
-        status: 404,
-        message: `User with id ${userId} not found`,
-        data: {}
-      });
-    }
+    });
   },
+  
 
   deleteUser: (req, res) => {
     const userId = parseInt(req.params.userId);
-    const userIndex = database.users.findIndex((user) => user.id === userId);
+    logger.info(`Delete user with id ${userId}`);
 
-    if (userIndex !== -1) {
-      database.users.splice(userIndex, 1);
-      res.status(200).json({
-        status: 200,
-        message: `User with id ${userId} has been deleted`,
-        data: {}
+    let sqlStatement = 'DELETE FROM `user` WHERE id = ?';
+    pool.getConnection((err, conn) => {
+      if (err) {
+        logger.error(err.message);
+        res.status(500).json({
+          status: 500,
+          message: 'Failed to connect to the database'
+        });
+        return;
+      }
+
+      conn.query(sqlStatement, [userId], (err, results) => {
+        pool.releaseConnection(conn);
+        if (err) {
+          logger.error(err.message);
+          res.status(500).json({
+            status: 500,
+            message: 'Failed to delete user'
+          });
+          return;
+        }
+
+        if (results.affectedRows > 0) {
+          res.status(200).json({
+            status: 200,
+            message: `User with id ${userId} has been deleted`,
+            data: {}
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message: `User with id ${userId} not found`,
+            data: {}
+          });
+        }
       });
-    } else {
-      res.status(404).json({
-        status: 404,
-        message: `User with id ${userId} not found`,
-        data: {}
-      });
-    }
+    });
   }
 };
 
 
 module.exports = userController;
+
+
+
+
+
+// // Bij de user kan je nu filteren
+// app.get('/api/user', (req, res) => {
+
+//   const querryField = Object.entries(req.query);
+//   console.log(`Dit is field1 ${querryField[0][0]} = ${querryField[0][1]}`);
+  
+//   res.status(200).json({
+//     status: 200,
+//     message: `Gefilterd op...`,
+//     data: {},
+//   });
+// });
+
