@@ -50,17 +50,13 @@ const userController = {
       assert(user.firstName && typeof user.firstName === 'string' && user.firstName.trim().length > 0 , 'Required field missing')
       assert(user.lastName && typeof user.lastName === 'string' && user.lastName.trim().length > 0 , 'Required field missing')
 
-  
       // Email address validation
       assert(typeof user.emailAdress === 'string', 'emailAdress must be a string')
       assert(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailAdress), 'emailAdress is not valid')
   
       // Password validation
       assert(typeof user.password === 'string', 'password must be a string')
-      // assert(user.password.length >= 8, 'password must be at least 8 characters long')
-      // assert(/[a-z]/i.test(user.password), 'password must contain at least one letter')
-      // assert(/[0-9]/.test(user.password), 'password must contain at least one number')
-      // assert(/[^a-z0-9]/i.test(user.password), 'password must contain at least one special character')
+
   
       pool.query('SELECT * FROM `user` WHERE `emailAdress` = ?', [user.emailAdress], (err, result) => {
         if (err) {
@@ -109,7 +105,7 @@ const userController = {
           logger.warn(err.message)
           res.status(403).json({
             status: 403,
-            message: err.message // this is the assert message: the user/email already exists
+            message: err.message 
           });
           return;
         }
@@ -118,7 +114,7 @@ const userController = {
       logger.warn(err.message)
       res.status(400).json({
         status: 400,
-        message: err.message // this is the assert message
+        message: err.message 
       });
       return;
     }
