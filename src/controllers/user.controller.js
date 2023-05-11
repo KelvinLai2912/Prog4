@@ -41,43 +41,89 @@ const userController = {
 
   createUser: (req, res) => {
     logger.info('Register user');
-
-    // De usergegevens zijn meegestuurd in de request body.
-    // In de komende lessen gaan we testen of dat werkelijk zo is.
+  
     const user = req.body;
     logger.debug('user = ', user);
+  
+    try {
+      // Validation
+      assert(user.firstName && typeof user.firstName === 'string' && user.firstName.trim().length > 0 , 'Required field missing')
+      assert(user.lastName && typeof user.lastName === 'string' && user.lastName.trim().length > 0 , 'Required field missing')
 
-    const sqlStatement = 'INSERT INTO `user` SET ?'
-                pool.getConnection((err, conn) => {
-                    if (err) {
-                        logger.error(err.message);
-                        res.status(500).json({ 
-                            status: 500, 
-                            message: 'Failed to connect to the database' 
-                        });
-                        return;
-                    }
-                    conn.query(sqlStatement, user, (err, result) => {
-                        if (err) {
-                            logger.error(err.message);
-                            res.status(500).json({ 
-                                status: 500, 
-                                message: 'Failed to insert user data into the database' 
-                            });
-                            return;
-                        }
-                        user.id = result.insertId;
-                        logger.info('User registered successfully with ID:', result.insertId)
-                        res.status(201).json({ 
-                            status: 201, 
-                            message: 'Successfully registered user', 
-                            data: user 
-                        });
-                    })
-                    pool.releaseConnection(conn);
+  
+      // Email address validation
+      assert(typeof user.emailAdress === 'string', 'emailAdress must be a string')
+      assert(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailAdress), 'emailAdress is not valid')
+  
+      // Password validation
+      assert(typeof user.password === 'string', 'password must be a string')
+      // assert(user.password.length >= 8, 'password must be at least 8 characters long')
+      // assert(/[a-z]/i.test(user.password), 'password must contain at least one letter')
+      // assert(/[0-9]/.test(user.password), 'password must contain at least one number')
+      // assert(/[^a-z0-9]/i.test(user.password), 'password must contain at least one special character')
+  
+      pool.query('SELECT * FROM `user` WHERE `emailAdress` = ?', [user.emailAdress], (err, result) => {
+        if (err) {
+          logger.error(err.message);
+          res.status(500).json({ 
+            status: 500, 
+            message: 'Failed to search for emailAdress in the database' 
+          });
+          return;
+        }   
+  
+        try {
+          assert(result.length === 0, 'User already exists')
+          const sqlStatement = 'INSERT INTO `user` SET ?'
+          pool.getConnection((err, conn) => {
+            if (err) {
+              logger.error(err.message);
+              res.status(500).json({ 
+                status: 500, 
+                message: 'Failed to connect to the database' 
+              });
+              return;
+            }
+  
+            conn.query(sqlStatement, user, (err, result) => {
+              if (err) {
+                logger.error(err.message);
+                res.status(500).json({ 
+                  status: 500, 
+                  message: 'Failed to insert user data into the database' 
                 });
+                return;
+              }
+  
+              user.id = result.insertId;
+              logger.info('User registered successfully with ID:', result.insertId)
+              res.status(201).json({ 
+                status: 201, 
+                message: 'Successfully registered user', 
+                data: user 
+              });
+            })
+            pool.releaseConnection(conn);
+          });
+        } catch (err) {
+          logger.warn(err.message)
+          res.status(403).json({
+            status: 403,
+            message: err.message // this is the assert message: the user/email already exists
+          });
+          return;
+        }
+      });
+    } catch (err) {
+      logger.warn(err.message)
+      res.status(400).json({
+        status: 400,
+        message: err.message // this is the assert message
+      });
+      return;
+    }
   },
-
+  
   getUserProfile: (req, res) => {
     res.status(501).json({
       status: 501,
@@ -132,6 +178,14 @@ const userController = {
     const userId = parseInt(req.params.userId);
     const updatedUser = req.body;
     logger.info(`Update user with id ${userId}`);
+
+    if (!updatedUser.emailAdress) {
+      res.status(400).json({
+        status: 400,
+        message: 'Required field "emailAdress" is missing'
+      });
+      return;
+    }
     
     let sqlStatement = 'UPDATE `user` SET ? WHERE `id` = ?';
     pool.getConnection((err, conn) => {
