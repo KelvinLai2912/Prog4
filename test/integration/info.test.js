@@ -95,7 +95,7 @@ it('TC-202-1 - Show all users (minimum 2)', (done) => {
 // TC-204-3 Gebruiker-ID bestaat
 describe('UC-204 Get user by ID', () => {
 it('TC-204-3 - User ID exists', (done) => {
-  const userId = 0; // Assuming user with ID 0 exists in the in-memory database
+  const userId = 1; 
   chai
     .request(server)
     .get(`/api/user/${userId}`)
