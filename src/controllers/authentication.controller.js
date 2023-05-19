@@ -65,7 +65,7 @@ module.exports = {
             }
           }
         });
-        pool.releaseConnection(connection);
+        connection.release();
       }
     });
   },
