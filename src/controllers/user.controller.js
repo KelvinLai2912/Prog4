@@ -6,38 +6,72 @@ const assert = require('assert');
 const userController = {
   getAllUsers: (req, res, next) => {
     logger.info('Get all users');
-    let sqlStatement = 'SELECT * FROM `user`'
-
+    
+    
+    // Initiate base SQL statement
+    let sqlStatement = 'SELECT * FROM `user`';
+    
+    // Parameters for SQL query
+    let sqlParams = [];
+  
+    // Check if there are query parameters and they don't exceed the maximum
+    const queryFields = Object.entries(req.query);
+    if (queryFields.length <= 2) {
+      if (queryFields.length > 0) {
+        sqlStatement += ' WHERE ';
+        queryFields.forEach((field, index) => {
+          if (index !== 0) {
+            sqlStatement += ' AND ';
+          }
+          sqlStatement += `${field[0]} = ?`;
+          sqlParams.push(field[1]);
+        });
+      }
+    } else {
+      res.status(400).json({
+        status: 400,
+        message: 'Too many query parameters. Maximum is 2.',
+      });
+      return;
+    }
+  
     pool.getConnection(function (err, conn) {
-        if (err) {
-          logger.error(err.message)
-          next({
-            status: 500,
-            message: 'Failed to connect to the database' 
-          })
-        }
-        if (conn) {
-          conn.query(sqlStatement, function (err, results, fields) {
-            if (err) {
-              logger.err(err.message)
-              next({
-                status: 500,
-                message: 'Failed to retrieve user data'
-              })
-            }
-            if (results) {
-              logger.info('Found', results.length, 'results');
-              res.status(200).json({
-                status: 200,
-                message: 'User data endpoint',
-                data: results
-              })
-            }
-          })
+      if (err) {
+        logger.error(err.message);
+        next({
+          status: 500,
+          message: 'Failed to connect to the database',
+        });
+      } else {
+        conn.query(sqlStatement, sqlParams, function (err, results, fields) {
           pool.releaseConnection(conn);
-        }
+          if (err) {
+            logger.error(err.message);
+            next({
+              status: 500,
+              message: 'Failed to retrieve user data',
+            });
+          } else if (results) {
+            // Filter the results: replace the password with 'hidden' for all other users
+            const authenticatedUserId = req.userId;  // Assuming you stored the authenticated user's ID here
+            results.forEach(user => {
+              if (user.id !== authenticatedUserId) {
+                user.password = 'hidden';
+              }
+            });
+            
+            logger.info('Found', results.length, 'results');
+            res.status(200).json({
+              status: 200,
+              message: 'User data endpoint',
+              data: results,
+            });
+          }
+        });
+      }
     });
   },
+  
 
   createUser: (req, res) => {
     logger.info('Register user');
@@ -196,6 +230,8 @@ const userController = {
 
   getUserById: (req, res) => {
     const userId = parseInt(req.params.userId);
+    // Get authenticated user's ID
+    const authenticatedUserId = Number(req.userId);
     let sqlStatement = 'SELECT * FROM `user` WHERE id = ?';
     pool.getConnection((err, conn) => {
       if (err) {
@@ -219,6 +255,10 @@ const userController = {
         }
 
         if (results.length > 0) {
+          // Hide password if authenticated user is not the same as requested user
+          if (results[0].id !== authenticatedUserId) {
+            results[0].password = 'hidden';
+          }
           res.status(200).json({
             status: 200,
             message: `User with id ${userId} found`,
@@ -234,6 +274,7 @@ const userController = {
       });
     });
   },
+
 
 
   updateUser: (req, res) => {
@@ -353,21 +394,3 @@ const userController = {
 
 
 module.exports = userController;
-
-
-
-
-
-// // Bij de user kan je nu filteren
-// app.get('/api/user', (req, res) => {
-
-//   const querryField = Object.entries(req.query);
-//   console.log(`Dit is field1 ${querryField[0][0]} = ${querryField[0][1]}`);
-  
-//   res.status(200).json({
-//     status: 200,
-//     message: `Gefilterd op...`,
-//     data: {},
-//   });
-// });
-

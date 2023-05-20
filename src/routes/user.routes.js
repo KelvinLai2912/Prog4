@@ -8,13 +8,13 @@ const authenticationController = require('../controllers/authentication.controll
 router.post('', userController.createUser);
 
 // UC-202 Opvragen van overzicht van users
-router.get('', userController.getAllUsers);
+router.get('', authenticationController.validateToken , userController.getAllUsers);
 
 // UC-203 Opvragen van gebruikersprofiel
 router.get('/profile', authenticationController.validateToken ,userController.getUserProfile);
 
 // UC-204 Opvragen van usergegevens bij ID
-router.get('/:userId', userController.getUserById);
+router.get('/:userId', authenticationController.validateToken , userController.getUserById);
 
 // UC-205 Wijzigen van usergegevens
 router.put('/:userId', authenticationController.validateToken ,userController.updateUser);
