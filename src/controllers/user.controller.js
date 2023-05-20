@@ -131,12 +131,68 @@ const userController = {
   },
   
   getUserProfile: (req, res) => {
-    res.status(501).json({
-      status: 501,
-      message: "Deze functionaliteit is nog niet geimplemnteerd",
-      data: {}
+    const userId = req.userId; // get user id from validated token
+  
+    logger.info(`Get user profile with id ${userId}`);
+  
+    let sqlStatement1 = 'SELECT * FROM `user` WHERE id = ?'; // get user details query
+    let sqlStatement2 = 'SELECT * FROM `meal` WHERE id = ?'; // get meals made by user query
+    
+    pool.getConnection((err, conn) => {
+      if (err) {
+        logger.error(err.message);
+        res.status(500).json({
+          status: 500,
+          message: 'Failed to connect to the database'
+        });
+        return;
+      }
+  
+      conn.query(sqlStatement1, [userId], (err, results) => {
+        if (err) {
+          pool.releaseConnection(conn);
+          logger.error(err.message);
+          res.status(500).json({
+            status: 500,
+            message: 'Failed to get user'
+          });
+          return;
+        }
+  
+        if (results.length > 0) {
+          let user = results[0];
+          conn.query(sqlStatement2, [userId], (err, results) => {
+            pool.releaseConnection(conn);
+            if (err) {
+              logger.error(err.message);
+              res.status(500).json({
+                status: 500,
+                message: 'Failed to get meals'
+              });
+              return;
+            }
+  
+            res.status(200).json({
+              status: 200,
+              message: `Loaded ${userId}`,
+              data: {
+                user: user,
+                meals: results
+              }
+            });
+          });
+        } else {
+          pool.releaseConnection(conn);
+          res.status(404).json({
+            status: 404,
+            message: `User with id ${userId} not found`,
+            data: {}
+          });
+        }
+      });
     });
-  },
+  }
+  ,
 
   getUserById: (req, res) => {
     const userId = parseInt(req.params.userId);
@@ -184,6 +240,15 @@ const userController = {
     const userId = parseInt(req.params.userId);
     const updatedUser = req.body;
     logger.info(`Update user with id ${userId}`);
+
+    if (req.userId !== userId) {
+      res.status(403).json({
+        status: 403,
+        message: 'You are not the owner of this account',
+        data: {}
+      });
+      return;
+    }
 
     if (!updatedUser.emailAdress) {
       res.status(400).json({
@@ -236,6 +301,15 @@ const userController = {
   deleteUser: (req, res) => {
     const userId = parseInt(req.params.userId);
     logger.info(`Delete user with id ${userId}`);
+
+    if (req.userId !== userId) {
+      res.status(403).json({
+        status: 403,
+        message: 'You are not the owner of this account',
+        data: {}
+      });
+      return;
+    }
 
     let sqlStatement = 'DELETE FROM `user` WHERE id = ?';
     pool.getConnection((err, conn) => {
