@@ -27,7 +27,7 @@ app.get('/api/info', (req, res) => {
     message: 'Server info-endpoint',
     data: {
       studentName: 'Kelvin',
-      studentNumber: 2205459,
+      studentNumber: 2205954,
       description: 'Welkom bij de server API van de share a meal.'
     }
   });
