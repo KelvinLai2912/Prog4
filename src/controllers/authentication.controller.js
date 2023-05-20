@@ -98,31 +98,73 @@ module.exports = {
    * validateToken
    * Check the token of the authenticated user.
    */
+
   validateToken(req, res, next) {
     logger.trace('validateToken called');
-    // The headers should contain the authorization-field with value 'Bearer [token]'
+  
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      next({
-        code: 401,
-        message: 'Authorization header missing!',
+      logger.trace('No authorization header');
+      res.status(401).json({ 
+        status: 401,
+        message: 'No authorization header',
         data: undefined
       });
     } else {
-      const token = authHeader.substring(7, authHeader.length);
+      const token = authHeader.substring(7);
+      logger.trace('token', token);
+  
       jwt.verify(token, jwtSecretKey, (err, payload) => {
         if (err) {
-          next({
-            code: 401,
+          logger.trace('Not authorized');
+          res.status(401).json({
+            status: 401,
             message: 'Not authorized',
             data: undefined
           });
-        }
-        if (payload) {
-          req.userId = payload.userId;
-          next();
+        } else {
+          // Check if payload contains a valid userId
+          if (payload && payload.userId) {
+            req.userId = payload.userId;
+            next();
+          } else {
+            logger.trace('Invalid token payload');
+            res.status(401).json({
+              status: 401,
+              message: 'Invalid token payload',
+              data: undefined
+            });
+          }
         }
       });
     }
   }
+
+  // validateToken(req, res, next) {
+  //   logger.trace('validateToken called');
+  //   // The headers should contain the authorization-field with value 'Bearer [token]'
+  //   const authHeader = req.headers.authorization;
+  //   if (!authHeader) {
+  //     next({
+  //       code: 401,
+  //       message: 'Authorization header missing!',
+  //       data: undefined
+  //     });
+  //   } else {
+  //     const token = authHeader.substring(7, authHeader.length);
+  //     jwt.verify(token, jwtSecretKey, (err, payload) => {
+  //       if (err) {
+  //         next({
+  //           code: 401,
+  //           message: 'Not authorized',
+  //           data: undefined
+  //         });
+  //       }
+  //       if (payload) {
+  //         req.userId = payload.userId;
+  //         next();
+  //       }
+  //     });
+  //   }
+  // }
 };

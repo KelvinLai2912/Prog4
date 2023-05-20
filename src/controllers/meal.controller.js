@@ -3,6 +3,95 @@ const logger = require('../util/utils').logger;
 const assert = require('assert');
 
 const mealController = {
+// UC-301 Toevoegen van nieuwe maaltijden
+    createMeal: (req, res, next) => {
+          logger.trace('Create new meal');
+      
+          // De mealgegevens zijn meegestuurd in de request body.
+          const meal = req.body;
+          const userId = req.userId;
+          logger.trace('meal = ', meal);
+      
+          // Hier zie je hoe je binnenkomende meal info kunt valideren.
+          try {
+            logger.info('assert req body')
+            assert(typeof meal.name === 'string', 'mealName must be a string');
+            assert(typeof meal.description === 'string', 'description must be a string');
+          } catch (err) {
+            logger.warn(err.message.toString());
+            // Als één van de asserts failt sturen we een error response.
+            logger.trace('assert failure')
+            next({
+              code: 400,
+              message: err.message.toString(),
+              data: {}
+            });
+      
+            // Nodejs is asynchroon. We willen niet dat de applicatie verder gaat
+            // wanneer er al een response is teruggestuurd.
+            return;
+          }
+      
+          logger.trace('asserts completed')
+      
+          let sqlStatement = 
+          'INSERT INTO `meal` (`name`, `description`, `imageUrl`, `dateTime`, `maxAmountOfParticipants`, `price`, `cookId`) VALUES' +
+          "(?, ?, ?, ?, ?, ?, ?);" + 
+            'SELECT * FROM `user` WHERE id=?;';
+      
+            pool.getConnection(function (err, conn) {
+              if (err) {
+                logger.error(err.code, err.syscall, err.address, err.port);
+                next({
+                  code: 500,
+                  message: err.code
+                });
+              }
+              if (conn) {
+                logger.trace('conn succesfull')
+                conn.query(
+                  sqlStatement,
+                  [
+                    meal.name,
+                    meal.description,
+                    meal.imageUrl,
+                    meal.dateTime,
+                    meal.maxAmountOfParticipants,
+                    meal.price,
+                    userId,
+                    meal.cookId
+                  ], (err, results, fields) => {
+                    if (err) {
+                      logger.err(err.message);
+                      next({
+                        code: 409,
+                        message: err.message
+                      });
+                    }
+                    if (results) {
+                      logger.trace('Meal successfully added, id = ', results.insertId);
+                      const newMeal = {
+                        id: results[0].insertId,
+                        ...meal,
+                        cook: results[1]
+                      }
+                      res.status(200).json({
+                        code: 200,
+                        message: 'New meal created',
+                        data: newMeal
+                      })
+                    }
+                  }
+                )
+              }
+            })
+      },
+      
+// UC-302 Wijzigen van maaltijd
+    updateMeal: (req, res) => {
+      },
+    
+// UC-303 Opvragen van alle maaltijden  
     getAllMeals: (req, res, next) => {
         logger.info('Get all meals');
         let sqlStatement = 'SELECT * FROM `meal`'
@@ -37,7 +126,8 @@ const mealController = {
             }
         });
       },
-      
+
+// UC-304 Opvragen van maaltijd bij ID      
     getMealById: (req, res) => {
             const mealId = parseInt(req.params.mealId);
             let sqlStatement = 'SELECT * FROM `meal` WHERE id = ?';
@@ -79,22 +169,70 @@ const mealController = {
             });
       },
 
+// UC-305 Verwijderen van maaltijd
+    deleteMeal: (req, res, next) => {
+  const mealId = parseInt(req.params.mealId);
+  const userId = req.userId; 
 
-    createMeal: (req, res) => {
-         logger.info('Register meal');
-         
-      },
+  const sqlStatement = 'SELECT * FROM `meal` WHERE `id`=?';
 
+  pool.getConnection((err, conn) => {
+    if (err) {
+      logger.error(err.code, err.syscall, err.address, err.port);
+      next({
+        code: 500,
+        message: err.code
+      });
+      return;
+    }
 
-    updateMeal: (req, res) => {
+    conn.query(sqlStatement, [mealId], (err, results) => {
+      if (err) {
+        logger.error(err.message);
+        next({
+          code: 500,
+          message: err.message
+        });
+        return;
+      }
 
-  },
-  
+      if (!results.length) {
+        res.status(404).json({
+          code: 404,
+          message: "Meal does not exist"
+        });
+        return;
+      }
 
-    deleteMeal: (req, res) => {
+      if (results[0].cookId !== userId) {
+        res.status(403).json({
+          code: 403,
+          message: "You are not the owner of the meal"
+        });
+        return;
+      }
 
-  } 
-    
+      const sqlDelete = 'DELETE FROM `meal` WHERE `id`=?';
+
+      conn.query(sqlDelete, [mealId], (err, result) => {
+        if (err) {
+          logger.error(err.message);
+          next({
+            code: 500,
+            message: err.message
+          });
+          return;
+        }
+
+        res.status(200).json({
+          code: 200,
+          message: "Meal successfully deleted"
+        });
+      });
+    });
+  });
+      }
+   
 };
 
 
