@@ -140,31 +140,4 @@ module.exports = {
     }
   }
 
-  // validateToken(req, res, next) {
-  //   logger.trace('validateToken called');
-  //   // The headers should contain the authorization-field with value 'Bearer [token]'
-  //   const authHeader = req.headers.authorization;
-  //   if (!authHeader) {
-  //     next({
-  //       code: 401,
-  //       message: 'Authorization header missing!',
-  //       data: undefined
-  //     });
-  //   } else {
-  //     const token = authHeader.substring(7, authHeader.length);
-  //     jwt.verify(token, jwtSecretKey, (err, payload) => {
-  //       if (err) {
-  //         next({
-  //           code: 401,
-  //           message: 'Not authorized',
-  //           data: undefined
-  //         });
-  //       }
-  //       if (payload) {
-  //         req.userId = payload.userId;
-  //         next();
-  //       }
-  //     });
-  //   }
-  // }
 };

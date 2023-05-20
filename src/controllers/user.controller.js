@@ -71,7 +71,6 @@ const userController = {
       }
     });
   },
-  
 
   createUser: (req, res) => {
     logger.info('Register user');
@@ -86,7 +85,6 @@ const userController = {
 
       // email address validation
       assert(typeof user.emailAdress === 'string' && user.emailAdress.trim().length > 0, 'emailAdress must be a string')
-      // assert(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.emailAdress), 'emailAdress is not valid') // oude email validatie
       assert(/^[a-zA-Z]\.[a-zA-Z]{2,}@[a-zA-Z]{2,}\.[a-zA-Z]{2,3}$/.test(user.emailAdress), 'emailAdress is not valid');
 
       // password validation
@@ -94,7 +92,6 @@ const userController = {
       assert(user.password.length >= 8, 'password must be at least 8 characters long')
       assert(/[A-Z]/.test(user.password), 'password must contain at least one uppercase letter')
       assert(/[0-9]/.test(user.password), 'password must contain at least one number')
-      //assert(/[^a-z0-9]/i.test(user.password), 'password must contain at least one special character') hoeft niet
 
       // phoneNumber validation
       assert(typeof user.phoneNumber === 'string' && user.phoneNumber.trim().length > 0 , 'phoneNumber must be a string')
@@ -225,8 +222,7 @@ const userController = {
         }
       });
     });
-  }
-  ,
+  },
 
   getUserById: (req, res) => {
     const userId = parseInt(req.params.userId);
@@ -274,8 +270,6 @@ const userController = {
       });
     });
   },
-
-
 
   updateUser: (req, res) => {
     const userId = parseInt(req.params.userId);
@@ -337,7 +331,6 @@ const userController = {
       });
     });
   },
-  
 
   deleteUser: (req, res) => {
     const userId = parseInt(req.params.userId);
