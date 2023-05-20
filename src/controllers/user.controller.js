@@ -85,7 +85,7 @@ const userController = {
 
       // email address validation
       assert(typeof user.emailAdress === 'string' && user.emailAdress.trim().length > 0, 'emailAdress must be a string')
-      assert(/^[a-zA-Z]\.[a-zA-Z]{2,}@[a-zA-Z]{2,}\.[a-zA-Z]{2,3}$/.test(user.emailAdress), 'emailAdress is not valid');
+      assert(/^[a-zA-Z]\.[a-zA-Z]{2,}@[a-zA-Z]{2,}\.[a-zA-Z]{2,3}$/.test(user.emailAdress), 'emailAdress is not valid (e.example@test.nl)');
 
       // password validation
       assert(typeof user.password === 'string' && user.password.trim().length > 0, 'password must be a string')
@@ -292,6 +292,31 @@ const userController = {
       });
       return;
     }
+       // Perform email validation checks
+    try {
+      assert(typeof updatedUser.emailAdress === 'string' && updatedUser.emailAdress.trim().length > 0, 'emailAdress must be a string');
+      assert(/^[a-zA-Z]\.[a-zA-Z]{2,}@[a-zA-Z]{2,}\.[a-zA-Z]{2,3}$/.test(updatedUser.emailAdress), 'emailAdress is not valid (e.example@test.nl)');
+    } catch (error) {
+      res.status(400).json({
+        status: 400,
+        message: error.message
+      });
+      return;
+    }
+
+      // Perform phone number validation checks if phone number is being updated
+  if (updatedUser.phoneNumber) {
+    try {
+      assert(typeof updatedUser.phoneNumber === 'string' && updatedUser.phoneNumber.trim().length > 0 , 'phoneNumber must be a string');
+      assert(/^06[- ]?\d{8}$/.test(updatedUser.phoneNumber), 'phoneNumber is not valid');
+    } catch (error) {
+      res.status(400).json({
+        status: 400,
+        message: error.message
+      });
+      return;
+    }
+  }
     
     let sqlStatement = 'UPDATE `user` SET ? WHERE `id` = ?';
     pool.getConnection((err, conn) => {
