@@ -1,10 +1,63 @@
+process.env['DB_DATABASE'] = process.env.DB_DATABASE || 'shareamealtest';
+
+const CLEAR_MEAL_TABLE = 'DELETE IGNORE FROM `meal`;';
+const CLEAR_PARTICIPANTS_TABLE = 'DELETE IGNORE FROM `meal_participants_user`;';
+const CLEAR_USERS_TABLE = 'DELETE IGNORE FROM `user`;';
+const CLEAR_DB =
+  CLEAR_MEAL_TABLE + CLEAR_PARTICIPANTS_TABLE + CLEAR_USERS_TABLE;
+
+/**
+ * Voeg een user toe aan de database. Deze user heeft id 1.
+ * Deze id kun je als foreign key gebruiken in de andere queries, bv insert meal.
+ */
+  const INSERT_USER =
+    'INSERT INTO `user` (`id`, `firstName`, `lastName`, `emailAdress`, `password`, `street`, `city` ) VALUES' +
+    '(1, "first", "last", "n.name@server.nl", "secret", "street", "city"),' +
+    '(2, "John", "Doe", "j.doe@server.com", "secret", "street", "city");';
+
+/**
+ * Query om twee meals toe te voegen. Let op de cookId, die moet matchen
+ * met een bestaande user in de database.
+ */
+  const INSERT_MEALS =
+    'INSERT INTO `meal` (`id`, `name`, `description`, `imageUrl`, `dateTime`, `maxAmountOfParticipants`, `price`, `cookId`) VALUES' +
+    "(1, 'Meal A', 'description', 'image url', NOW(), 5, 6.50, 1)," +
+    "(2, 'Meal B', 'description', 'image url', NOW(), 5, 6.50, 1);";
+
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const server = require('../../Index')
+const dbconnection = require('../../src/util/mysql-db');
 chai.should()
 chai.use(chaiHttp)
 
 let authToken;
+
+
+beforeEach((done) => {
+  // maak de testdatabase leeg zodat we onze testen kunnen uitvoeren.
+  dbconnection.getConnection(function (err, connection) {
+    if (err) {
+      done(err);
+      throw err; // no connection
+    }
+    // Use the connection
+    connection.query(
+      CLEAR_DB + INSERT_USER,
+      function (error, results, fields) {
+        if (error) {
+          done(error);
+          throw error; // not connected!
+        }
+
+        // When done with the connection, release it.
+        dbconnection.releaseConnection(connection);
+        // Let op dat je done() pas aanroept als de query callback eindigt!
+        done();
+      }
+    );
+  });
+});
 
 
 before((done) => {
@@ -184,10 +237,10 @@ before((done) => {
 
   //werkt niet omdat check van eigenaar token voor gaat
   it('TC-205-4 - User does not exist', (done) => {
-    const nonExistentUserId = 0;
+    const nonExistentUserId = 0; 
     chai
       .request(server)
-      .put(`/api/user/${nonExistentUserId}`)
+      .get(`/api/user/${nonExistentUserId}`)
       .set('Authorization', `Bearer ${authToken}`)
       .end((err, res) => {
         res.should.have.status(404);
@@ -246,57 +299,58 @@ before((done) => {
     let token;
 
     // TC-206-0 - Create a user to delete
-    it('TC-206-0 - Create a user to delete', (done) => {
+    it('TC-206-0 - log in a user to delete', (done) => {
       const userToDelete = {
-        firstName: 'Pepa',
-        lastName: 'Big',
-        emailAddress: 'p.big@test.com',
-        password: 'Welkom01',
-        phoneNumber: '06 12345678'
+        emailAdress: 'n.name@server.nl',
+        password: 'secret',
       };
-
-    chai
-      .request(server)
-      .post('/api/user')
-      .send(userToDelete)
-      .end((err, postRes) => {
-        postRes.should.have.status(200);
-        postRes.body.should.be.an('object');
-        postRes.body.should.have.property('data');
-        createdUserId = parseInt(postRes.body.data.id);
-        token = postRes.body.token; // Extract the token from the response
-        done();
+    
+      chai
+        .request(server)
+        .post('/api/login')
+        .send(userToDelete)
+        .end((err, postRes) => {
+          postRes.should.have.status(200);
+          postRes.body.should.be.an('object');
+          postRes.body.should.have.property('data');
+          if(postRes.body && postRes.body.data) {
+            token = postRes.body.data.token;
+          } else {
+            console.error("Failed to get token from response body")
+          }
+          done();
+        });
       });
-  });
+      
+      // TC-206-1 - User does not exist
+      it('TC-206-1 - User does not exist', (done) => {
+        const nonExistentUserId = 0; 
+        chai
+          .request(server)
+          .get(`/api/user/${nonExistentUserId}`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .end((err, res) => {
+            res.should.have.status(404);
+            res.body.should.be.an('object');
+            res.body.should.have.property('status').to.be.equal(404);
+            res.body.should.have.property('message');
+            done();
+          });
+      });
 
     // TC-206-4 - User successfully deleted
     it('TC-206-4 - User successfully deleted', (done) => {
       chai
         .request(server)
-        .delete(`/api/user/${createdUserId}`)
+        .delete(`/api/user/1`)
         .set('Authorization', `Bearer ${token}`)
         .end((err, deleteRes) => {
           deleteRes.should.have.status(200);
           deleteRes.body.should.be.an('object');
-          deleteRes.body.should.have.property('message').to.be.equal(`User with id ${createdUserId} has been deleted`);
+          deleteRes.body.should.have.property('message').to.be.equal(`User with id 1 has been deleted`);
           done();
         });
     });
 
 
-    // TC-206-1 - User does not exist
-    it('TC-206-1 - User does not exist', (done) => {
-      const nonExistentUserId = 0; 
-      chai
-        .request(server)
-        .get(`/api/user/${nonExistentUserId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .end((err, res) => {
-          res.should.have.status(404);
-          res.body.should.be.an('object');
-          res.body.should.have.property('status').to.be.equal(404);
-          res.body.should.have.property('message');
-          done();
-        });
-    });
   });
