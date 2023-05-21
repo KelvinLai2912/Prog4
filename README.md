@@ -23,18 +23,18 @@ Om de server te starten, gebruikt u `node .\Index.js`.
 ## API routes
 Hier zijn de belangrijkste routes van de API:
 
-- `POST /login`: Route om in te loggen.
-- `POST /users`: Route om een nieuwe gebruiker te registreren.
-- `GET /users`: Route om een overzicht van alle gebruikers op te vragen.
-- `GET /users/profile`: Route om het profiel van de huidige gebruiker op te vragen.
-- `GET /users/:userId`: Route om de gegevens van een specifieke gebruiker op te vragen op basis van het ID.
-- `PUT /users/:userId`: Route om de gegevens van een specifieke gebruiker te wijzigen op basis van het ID.
-- `DELETE /users/:userId`: Route om een specifieke gebruiker te verwijderen op basis van het ID.
-- `POST /meals`: Route om een nieuwe maaltijd toe te voegen.
-- `PUT /meals/:mealId`: Route om een specifieke maaltijd te wijzigen op basis van het ID.
-- `GET /meals`: Route om alle maaltijden op te vragen.
-- `GET /meals/:mealId`: Route om een specifieke maaltijd op te vragen op basis van het ID.
-- `DELETE /meals/:mealId`: Route om een specifieke maaltijd te verwijderen op basis van het ID.
+- `POST /api/login`: Route om in te loggen.
+- `POST /api/users`: Route om een nieuwe gebruiker te registreren.
+- `GET /api/users`: Route om een overzicht van alle gebruikers op te vragen.
+- `GET /api/users/profile`: Route om het profiel van de huidige gebruiker op te vragen.
+- `GET /api/users/:userId`: Route om de gegevens van een specifieke gebruiker op te vragen op basis van het ID.
+- `PUT /api/users/:userId`: Route om de gegevens van een specifieke gebruiker te wijzigen op basis van het ID.
+- `DELETE /api/users/:userId`: Route om een specifieke gebruiker te verwijderen op basis van het ID.
+- `POST /api/meals`: Route om een nieuwe maaltijd toe te voegen.
+- `PUT /api/meals/:mealId`: Route om een specifieke maaltijd te wijzigen op basis van het ID.
+- `GET /api/meals`: Route om alle maaltijden op te vragen.
+- `GET /api/meals/:mealId`: Route om een specifieke maaltijd op te vragen op basis van het ID.
+- `DELETE /api/meals/:mealId`: Route om een specifieke maaltijd te verwijderen op basis van het ID.
 
 ## Foutafhandeling
 De API heeft uitgebreide foutafhandeling. Fouten worden gelogd voor debuggen en relevante statuscodes worden teruggestuurd naar de client.
