@@ -39,10 +39,11 @@ const mealController = {
       
             pool.getConnection(function (err, conn) {
               if (err) {
-                logger.error(err.status, err.syscall, err.address, err.port);
+                logger.error(err.message, err.status, err.syscall, err.address, err.port);
                 next({
                   status: 500,
-                  message: err.status
+                  message: err.status,
+                  error: err.message
                 });
               }
               if (conn) {
