@@ -12,25 +12,23 @@ const mealController = {
           const userId = req.userId;
           logger.trace('meal = ', meal);
       
-          // Hier zie je hoe je binnenkomende meal info kunt valideren.
+          // Here you can see how to validate incoming meal info.
           try {
             logger.info('assert req body')
             assert(typeof meal.name === 'string', 'mealName must be a string');
             assert(typeof meal.description === 'string', 'description must be a string');
+            assert(typeof meal.price === 'number', 'price must be a number');
+            assert(typeof meal.dateTime === 'string', 'dateTime must be a string');
+            assert(typeof meal.maxAmountOfParticipants === 'number', 'maxAmountOfParticipants must be a number');
+            assert(typeof meal.imageUrl === 'string', 'imageUrl must be a string');
           } catch (err) {
             logger.warn(err.message.toString());
-            // Als één van de asserts failt sturen we een error response.
-            logger.trace('assert failure')
-            next({
-              code: 400,
-              message: err.message.toString(),
-              data: {}
+            res.status(400).json({
+                status: 400,
+                message: err.message.toString(),
             });
-      
-            // Nodejs is asynchroon. We willen niet dat de applicatie verder gaat
-            // wanneer er al een response is teruggestuurd.
             return;
-          }
+        }
       
           logger.trace('asserts completed')
       
@@ -41,10 +39,10 @@ const mealController = {
       
             pool.getConnection(function (err, conn) {
               if (err) {
-                logger.error(err.code, err.syscall, err.address, err.port);
+                logger.error(err.status, err.syscall, err.address, err.port);
                 next({
-                  code: 500,
-                  message: err.code
+                  status: 500,
+                  message: err.status
                 });
               }
               if (conn) {
@@ -64,7 +62,7 @@ const mealController = {
                     if (err) {
                       logger.err(err.message);
                       next({
-                        code: 409,
+                        status: 409,
                         message: err.message
                       });
                     }
@@ -75,8 +73,8 @@ const mealController = {
                         ...meal,
                         cook: results[1]
                       }
-                      res.status(200).json({
-                        code: 200,
+                      res.status(201).json({
+                        status: 201,
                         message: 'New meal created',
                         data: newMeal
                       })
@@ -178,10 +176,10 @@ const mealController = {
 
   pool.getConnection((err, conn) => {
     if (err) {
-      logger.error(err.code, err.syscall, err.address, err.port);
+      logger.error(err.status, err.syscall, err.address, err.port);
       next({
-        code: 500,
-        message: err.code
+        status: 500,
+        message: err.status
       });
       return;
     }
@@ -190,7 +188,7 @@ const mealController = {
       if (err) {
         logger.error(err.message);
         next({
-          code: 500,
+          status: 500,
           message: err.message
         });
         return;
@@ -198,7 +196,7 @@ const mealController = {
 
       if (!results.length) {
         res.status(404).json({
-          code: 404,
+          status: 404,
           message: "Meal does not exist"
         });
         return;
@@ -206,7 +204,7 @@ const mealController = {
 
       if (results[0].cookId !== userId) {
         res.status(403).json({
-          code: 403,
+          status: 403,
           message: "You are not the owner of the meal"
         });
         return;
@@ -218,22 +216,20 @@ const mealController = {
         if (err) {
           logger.error(err.message);
           next({
-            code: 500,
+            status: 500,
             message: err.message
           });
           return;
         }
 
         res.status(200).json({
-          code: 200,
+          status: 200,
           message: "Meal successfully deleted"
         });
       });
     });
   });
-      }
-   
-};
+}};
 
 
 

@@ -13,7 +13,8 @@ const CLEAR_DB =
   const INSERT_USER =
     'INSERT INTO `user` (`id`, `firstName`, `lastName`, `emailAdress`, `password`, `street`, `city` ) VALUES' +
     '(1, "first", "last", "n.name@server.nl", "secret", "street", "city"),' +
-    '(2, "John", "Doe", "j.doe@server.com", "secret", "street", "city");';
+    '(2, "John", "Doe", "j.doe@server.com", "secret", "street", "city"),' +
+    '(3, "Pepa", "Big", "p.big@server.com", "secret", "street", "city");';
 
 /**
  * Query om twee meals toe te voegen. Let op de cookId, die moet matchen
@@ -22,7 +23,8 @@ const CLEAR_DB =
   const INSERT_MEALS =
     'INSERT INTO `meal` (`id`, `name`, `description`, `imageUrl`, `dateTime`, `maxAmountOfParticipants`, `price`, `cookId`) VALUES' +
     "(1, 'Meal A', 'description', 'image url', NOW(), 5, 6.50, 1)," +
-    "(2, 'Meal B', 'description', 'image url', NOW(), 5, 6.50, 1);";
+    "(2, 'Meal B', 'description', 'image url', NOW(), 5, 6.50, 1)," +
+    "(3, 'Meal C', 'description', 'image url', NOW(), 2, 6.50, 2);";
 
 const chai = require('chai')
 const chaiHttp = require('chai-http')
@@ -43,7 +45,7 @@ beforeEach((done) => {
     }
     // Use the connection
     connection.query(
-      CLEAR_DB + INSERT_USER,
+      CLEAR_DB + INSERT_USER + INSERT_MEALS,
       function (error, results, fields) {
         if (error) {
           done(error);
@@ -475,7 +477,7 @@ before((done) => {
     // TC-206-0 - Create a user to delete
     it('TC-206-0 - log in a user to delete', (done) => {
       const userToDelete = {
-        emailAdress: 'n.name@server.nl',
+        emailAdress: 'p.big@server.com',
         password: 'secret',
       };
     
@@ -544,14 +546,15 @@ before((done) => {
 
     // TC-206-4 - User successfully deleted
     it('TC-206-4 - User successfully deleted', (done) => {
+      const UserId = 3;
       chai
         .request(server)
-        .delete(`/api/user/1`)
+        .delete(`/api/user/${UserId}`)
         .set('Authorization', `Bearer ${token}`)
         .end((err, deleteRes) => {
           deleteRes.should.have.status(200);
           deleteRes.body.should.be.an('object');
-          deleteRes.body.should.have.property('message').to.be.equal(`User with id 1 has been deleted`);
+          deleteRes.body.should.have.property('message').to.be.equal(`User with id ${UserId} has been deleted`);
           done();
         });
     });
