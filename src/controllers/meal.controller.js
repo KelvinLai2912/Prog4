@@ -61,7 +61,7 @@ const mealController = {
                     meal.cookId
                   ], (err, results, fields) => {
                     if (err) {
-                      logger.err(err.message);
+                      logger.error(err.message);
                       next({
                         status: 409,
                         message: err.message
