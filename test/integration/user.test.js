@@ -100,6 +100,53 @@ before((done) => {
           done();
         });
     });
+
+  //TC-201-2 - Required field "emailAddress" is invalid'  
+    it('TC-201-2 - Required field "emailAddress" is invalid', (done) => {
+      const newUser = {
+        firstName: 'John',
+        lastName: 'WDDW',
+        emailAddress: 'john@invalidemail',  // Invalid email address
+        password: 'Welkom01',
+        phoneNumber: '06 12345678'
+      };
+    
+      chai
+        .request(server)
+        .post('/api/user')
+        .send(newUser)
+        .end((err, res) => {
+          res.should.have.status(400);
+          res.body.should.be.an('object');
+          res.body.should.have.property('status').to.be.equal(400);
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+
+  //TC-201-3 - Required field "password" is invalid'  
+    it('TC-201-3 - Required field "password" is invalid', (done) => {
+        const newUser = {
+          firstName: 'John',
+          lastName: 'WDDW',
+          emailAddress: 'j.john@invalidemail.nl', 
+          password: 'secret', // Invalid password
+          phoneNumber: '06 12345678'
+        };
+      
+        chai
+          .request(server)
+          .post('/api/user')
+          .send(newUser)
+          .end((err, res) => {
+            res.should.have.status(400);
+            res.body.should.be.an('object');
+            res.body.should.have.property('status').to.be.equal(400);
+            res.body.should.have.property('message');
+            done();
+          });
+    });
+    
     
     // TC-201-4 - User already exists
     it('TC-201-4 - User already exists', (done) => {
@@ -151,9 +198,9 @@ before((done) => {
             });
         });
         
-    });
+  });
 
-  // TC-202-1 Toon alle gebruikers (minimaal 2)
+  // UC-202 Opvragen van overzicht van users
   describe('UC-202 Get all users', () => {
   it('TC-202-1 - Show all users (minimum 2)', (done) => {
     chai
@@ -171,10 +218,98 @@ before((done) => {
         done();
       });
     });
+    
+
+
+  it('TC-202-3 - Show all users isActive=false', (done) => {
+    chai
+      .request(server)
+      .get('/api/user?isActive=false')
+      .set('Authorization', `Bearer ${authToken}`)
+      .end((err, res) => {
+        res.should.have.status(200);
+        res.body.should.be.an('object');
+        res.body.should.have.property('status').to.be.equal(200);
+        res.body.should.have.property('message');
+        done();
+      });
+    });
+
+    it('TC-202-4 - Show all users isActive=true', (done) => {
+      chai
+        .request(server)
+        .get('/api/user?isActive=true')
+        .set('Authorization', `Bearer ${authToken}`)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.an('object');
+          res.body.should.have.property('status').to.be.equal(200);
+          res.body.should.have.property('message');
+          done();
+        });
+      });
+
+      it('TC-202-5 - Show all users using 2 search fields', (done) => {
+        chai
+          .request(server)
+          .get('/api/user?firstName=HenkisActive=true')
+          .set('Authorization', `Bearer ${authToken}`)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.an('object');
+            res.body.should.have.property('status').to.be.equal(200);
+            res.body.should.have.property('message');
+            done();
+          });
+        });
   });  
-  
+
+  // UC-203 Opvragen van gebruikersprofiel
+  describe('UC-203 get user profile', () => {
+
+  it('TC-203-1 - invalid token', (done) => {
+      chai
+        .request(server)
+        .get('/api/user/profile')
+        .end((err, res) => {
+          res.should.have.status(401);
+          res.body.should.be.an('object');
+          res.body.should.have.property('status').to.be.equal(401);
+          res.body.should.have.property('message');
+          done();
+        });
+      });
+
+  it('TC-203-2 - valid token', (done) => {
+        chai
+          .request(server)
+          .get('/api/user/profile')
+          .set('Authorization', `Bearer ${authToken}`)
+          .end((err, res) => {
+            res.should.have.status(200);
+            res.body.should.be.an('object');
+            res.body.should.have.property('status').to.be.equal(200);
+            res.body.should.have.property('message');
+            done();
+          });
+      }); 
+  });
+
   // UC-204 Get user by ID
   describe('UC-204 Get user by ID', () => {
+
+  it('TC-204-1 - invalid token', (done) => {
+      chai
+        .request(server)
+        .get('/api/user/1')
+        .end((err, res) => {
+          res.should.have.status(401);
+          res.body.should.be.an('object');
+          res.body.should.have.property('status').to.be.equal(401);
+          res.body.should.have.property('message');
+          done();
+        });
+  });
 
   it('TC-204-2 - User ID does not exist', (done) => {
     const nonExistentUserId = 0; 
@@ -214,8 +349,7 @@ before((done) => {
 
  // UC-205 Update user data
   describe('UC-205 Update user data', () => {
-
-  it('TC-205-1 - Required field "emailAddress" is missing', (done) => {
+    it('TC-205-1 - Required field "emailAddress" is missing', (done) => {
     const existingUserId = 2;
     const updatedUser = {
       firstName: 'John',
@@ -235,7 +369,48 @@ before((done) => {
       });
   });
 
-  //werkt niet omdat check van eigenaar token voor gaat
+  it('TC-205-2 - Not the owner of user', (done) => {
+      const UserId = 1;
+      const updatedUser = {
+        firstName: 'John',
+        emailAdress: 'j.doe@example.com',
+      };
+      chai
+        .request(server)
+        .put(`/api/user/${UserId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updatedUser)
+        .end((err, res) => {
+          res.should.have.status(403);
+          res.body.should.be.an('object');
+          res.body.should.have.property('status').to.be.equal(403);
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+ 
+  it('TC-205-3 - Field "phoneNumber" is invalid', (done) => {
+        const existingUserId = 2;
+        const updatedUser = {
+          emailAddress: 'j.doe@server.com', 
+          phoneNumber: '324233'
+        };
+      
+        chai
+          .request(server)
+          .put(`/api/user/${existingUserId}`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .send(updatedUser)
+          .end((err, res) => {
+            res.should.have.status(400);
+            res.body.should.be.an('object');
+            res.body.should.have.property('status').to.be.equal(400);
+            res.body.should.have.property('message');
+            done();
+          });
+    });
+
+
   it('TC-205-4 - User does not exist', (done) => {
     const nonExistentUserId = 0; 
     chai
@@ -292,7 +467,6 @@ before((done) => {
 
   });  
 
-
 // UC-206 Delete user
   describe('UC-206 Delete user', () => {
     let createdUserId;
@@ -322,8 +496,8 @@ before((done) => {
         });
       });
       
-      // TC-206-1 - User does not exist
-      it('TC-206-1 - User does not exist', (done) => {
+    // TC-206-1 - User does not exist
+    it('TC-206-1 - User does not exist', (done) => {
         const nonExistentUserId = 0; 
         chai
           .request(server)
@@ -336,7 +510,37 @@ before((done) => {
             res.body.should.have.property('message');
             done();
           });
-      });
+    });
+
+    // TC-206-2 - User is not signed in
+    it('TC-206-2 - User is not signed in', (done) => {
+          const UserId = 1; 
+          chai
+            .request(server)
+            .get(`/api/user/${UserId}`)
+            .end((err, res) => {
+              res.should.have.status(401);
+              res.body.should.be.an('object');
+              res.body.should.have.property('status').to.be.equal(401);
+              res.body.should.have.property('message');
+              done();
+            });
+    });
+
+    // TC-206-4 - User not deleted
+    it('TC-206-4 - User not deleted', (done) => {
+          chai
+            .request(server)
+            .delete(`/api/user/1`)
+            .set('Authorization', `Bearer ${authToken}`)
+            .end((err, deleteRes) => {
+              deleteRes.should.have.status(403);
+              deleteRes.body.should.be.an('object');
+              deleteRes.body.should.have.property('message');
+              done();
+            });
+    });
+
 
     // TC-206-4 - User successfully deleted
     it('TC-206-4 - User successfully deleted', (done) => {

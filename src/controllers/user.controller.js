@@ -23,8 +23,28 @@ const userController = {
           if (index !== 0) {
             sqlStatement += ' AND ';
           }
-          sqlStatement += `${field[0]} = ?`;
-          sqlParams.push(field[1]);
+          
+          // Handle isActive field specifically
+          if (field[0] === 'isActive') {
+            if (field[1].toLowerCase() === 'true') {
+              sqlStatement += `${field[0]} = ?`;
+              sqlParams.push(1);
+            } else if (field[1].toLowerCase() === 'false') {
+              sqlStatement += `${field[0]} = ?`;
+              sqlParams.push(0);
+            } else {
+              // handle error: isActive is not true or false
+              res.status(400).json({
+                status: 400,
+                message: 'Invalid value for isActive. It should be either true or false.',
+              });
+              return;
+            }
+          } else {
+            // For all other fields
+            sqlStatement += `${field[0]} = ?`;
+            sqlParams.push(field[1]);
+          }
         });
       }
     } else {
