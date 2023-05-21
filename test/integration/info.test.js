@@ -24,5 +24,19 @@ describe('UC-102 Informatie opvragen', function () {
           done();
         });
     });
+
+    it('TC-102-2 - Server should return valid error when endpoint does not exist', (done) => {
+      chai
+        .request(server)
+        .get('/api/doesnotexist')
+        .end((err, res) => {
+          res.body.should.be.an('object');
+          let { data, message, status } = res.body;
+          status.should.equal(404);
+          message.should.be.a('string').that.is.equal('Endpoint not found');
+          data.should.be.an('object'); 
+          done();
+        });
+    });
   });
 

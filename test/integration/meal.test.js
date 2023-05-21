@@ -16,7 +16,6 @@ before((done) => {
         password: 'secret'
       })
       .end((err, res) => {
-        console.log(res.body); //Shows result working login and getting a token
         if(res.body && res.body.data) {
           authToken = res.body.data.token;
         } else {
