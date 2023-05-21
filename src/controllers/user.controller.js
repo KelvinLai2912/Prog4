@@ -147,7 +147,8 @@ const userController = {
                 logger.error(err.message);
                 res.status(500).json({ 
                   status: 500, 
-                  message: 'Failed to insert user data into the database' 
+                  message: 'Failed to insert user data into the database' ,
+                  error: err.message
                 });
                 return;
               }
