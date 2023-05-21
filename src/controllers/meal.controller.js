@@ -127,45 +127,45 @@ const mealController = {
 
 // UC-304 Opvragen van maaltijd bij ID      
     getMealById: (req, res) => {
-            const mealId = parseInt(req.params.mealId);
-            let sqlStatement = 'SELECT * FROM `meal` WHERE id = ?';
-            pool.getConnection((err, conn) => {
-              if (err) {
-                logger.error(err.message);
-                res.status(500).json({
-                  status: 500,
-                  message: 'Failed to connect to the database'
-                });
-                return;
-              }
-        
-              conn.query(sqlStatement, [mealId], (err, results) => {
-                pool.releaseConnection(conn);
-                if (err) {
-                  logger.error(err.message);
-                  res.status(500).json({
-                    status: 500,
-                    message: 'Failed to retrieve meal'
-                  });
-                  return;
-                }
-        
-                if (results.length > 0) {
-                  res.status(200).json({
-                    status: 200,
-                    message: `meal with id ${mealId} found`,
-                    data: results[0]
-                  });
-                } else {
-                  res.status(404).json({
-                    status: 404,
-                    message: `meal with id ${mealId} not found`,
-                    data: {}
-                  });
-                }
-              });
-            });
-      },
+  const mealId = parseInt(req.params.mealId);
+  let sqlStatement = 'SELECT * FROM `meal` WHERE id = ?';
+  pool.getConnection((err, conn) => {
+    if (err) {
+      logger.error(err.message);
+      res.status(500).json({
+        status: 500,
+        message: 'Failed to connect to the database'
+      });
+      return;
+    }
+
+    conn.query(sqlStatement, [mealId], (err, results) => {
+      if (err) {
+        logger.error(err.message);
+        res.status(500).json({
+          status: 500,
+          message: 'Failed to retrieve meal'
+        });
+      } else {
+        if (results.length > 0) {
+          res.status(200).json({
+            status: 200,
+            message: `meal with id ${mealId} found`,
+            data: results[0]
+          });
+        } else {
+          res.status(404).json({
+            status: 404,
+            message: `meal with id ${mealId} not found`,
+            data: {}
+          });
+        }
+      }
+      pool.releaseConnection(conn);  // Moved here
+    });
+  });
+    },
+
 
 // UC-305 Verwijderen van maaltijd
     deleteMeal: (req, res, next) => {
