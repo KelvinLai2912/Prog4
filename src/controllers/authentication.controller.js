@@ -13,39 +13,55 @@ module.exports = {
       if (err) {
         logger.error('Error getting connection from pool');
         next({
-          code: 500,
-          message: err.code
+          status: 500,
+          message: err.status
         });
       }
       if (connection) {
         logger.trace('Database connection success');
-
+  
         const sqlStatement = 'SELECT * FROM `user` WHERE `emailAdress` =?';
-
+  
         connection.query(sqlStatement, [req.body.emailAdress], function (err, results, fields) {
           if (err) {
             logger.err(err.message);
             next({
-              code: 409,
+              status: 409,
               message: err.message
             });
           }
           if (results) {
             logger.info('Found', results.length, 'results');
-            if (results.length === 1 && results[0].password === req.body.password) {
-
+            // If no user with the provided email exists
+            if (results.length === 0) {
+              res.status(404).json({
+                status: 404,
+                message: 'User does not exist'
+              });
+              return;
+            }
+            // If the password does not match
+            else if (results.length === 1 && results[0].password !== req.body.password) {
+              res.status(400).json({
+                status: 400,
+                message: 'Invalid password'
+              });
+              return;
+            }
+            // If the user is found and password matches
+            else if (results.length === 1 && results[0].password === req.body.password) {
               const {password, id, ...userInfo} = results[0];
               const payload = {
                 userId: id
               }
-
+  
               jwt.sign(payload, 
                 jwtSecretKey, 
                 { expiresIn: '2d' }, 
                 (err, token) => {
                   if (token) {
                     res.status(200).json({
-                      code: 200,
+                      status: 200,
                       message: 'Login endpoint',
                       data: {
                         id,
@@ -55,13 +71,6 @@ module.exports = {
                     });
                   }
               })
-
-            } else {
-              next({
-                code: 401,
-                message: 'Not authorized',
-                data: undefined
-              })
             }
           }
         });
@@ -69,7 +78,7 @@ module.exports = {
       }
     });
   },
-
+  
   /**
    * Validatie functie voor /api/login,
    * valideert of de vereiste body aanwezig is.
@@ -78,19 +87,17 @@ module.exports = {
     // Verify that we receive the expected input
     try {
       assert(
-        typeof req.body.emailAdress === 'string',
-        'emailAdress must be a string.'
-      );
+        typeof req.body.emailAdress === 'string','emailAdress must be a string.');
       assert(
-        typeof req.body.password === 'string',
-        'password must be a string.'
-      );
+        typeof req.body.password === 'string','password must be a string.');
       next();
-    } catch (ex) {
-      res.status(422).json({
-        error: ex.toString(),
-        datetime: new Date().toISOString()
+    } catch (err) {
+      logger.warn(err.message.toString());
+      res.status(400).json({
+          status: 400,
+          message: err.message.toString(),
       });
+      return;
     }
   },
 
