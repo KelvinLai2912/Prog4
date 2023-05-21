@@ -183,7 +183,8 @@ before((done) => {
                 emailAdress: 'j.rose@domein.com',
                 password: 'Welkom01',
                 phoneNumber: '0612345678',
-                street: "DefaultStreet"
+                street: 'DefaultStreet',
+                city: 'DefealtCity'
             })
             .end((err, res) => {
               res.should.have.status(201);
