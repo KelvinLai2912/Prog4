@@ -42,6 +42,7 @@ jobs:
       - name: npm test
         run: |
           chmod +x ./node_modules/.bin/mocha
+          chmod +x ./node_modules/.bin/cross-env
           npm test
         env:
           DB_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
