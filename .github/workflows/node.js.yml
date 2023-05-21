@@ -40,7 +40,9 @@ jobs:
           npm install
 
       - name: npm test
-        run: npm test
+        run: |
+          chmod +x ./node_modules/.bin/mocha
+          npm test
         env:
           DB_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
           DB_USER: root
