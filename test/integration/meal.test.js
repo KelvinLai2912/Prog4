@@ -37,7 +37,7 @@ before((done) => {
             //name is missing
             description: "Meal Description",
             imageUrl: "http://example.com/image.jpg",
-            dateTime: "2023-05-20T00:17:17.226Z",
+            dateTime: NOW(),
             maxAmountOfParticipants: 4,
             price: 20.5
           })
