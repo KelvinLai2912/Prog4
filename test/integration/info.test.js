@@ -18,7 +18,7 @@ describe('UC-102 Informatie opvragen', function () {
           let { data, message } = res.body;
           data.should.be.an('object');
           data.should.has.property('studentName').to.be.equal('Kelvin');
-          data.should.has.property('studentNumber').to.be.equal(2205459);
+          data.should.has.property('studentNumber').to.be.equal(2205954);
           done();
         });
     });
