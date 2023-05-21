@@ -221,7 +221,22 @@ before((done) => {
       });
     });
     
-
+    it('TC-202-2 - Search for non existing fields', (done) => {
+      chai
+        .request(server)
+        .get('/api/user?firstName=PepaBig')
+        .set('Authorization', `Bearer ${authToken}`)
+        .end((err, res) => {
+            res.body.should.be.an('object');
+            let {status, message, data} = res.body;
+            status.should.equal(200);
+            message.should.equal('User data endpoint');
+            res.body.should.have.property('status').to.be.equal(200);
+            data.should.be.an('array');
+            data.length.should.be.eql(0);
+            done();
+        });
+      });
 
   it('TC-202-3 - Show all users isActive=false', (done) => {
     chai
