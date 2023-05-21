@@ -12,9 +12,9 @@ const CLEAR_DB =
  */
   const INSERT_USER =
     'INSERT INTO `user` (`id`, `firstName`, `lastName`, `emailAdress`, `password`, `street`, `city` ) VALUES' +
-    '(1, "first", "last", "n.name@server.nl", "secret", "street", "city"),' +
-    '(2, "John", "Doe", "j.doe@server.com", "secret", "street", "city"),' +
-    '(3, "Pepa", "Big", "p.big@server.com", "secret", "street", "city");';
+    '(1, "first", "last", "n.name@server.nl", "secret", "DefaultStreet", "city"),' +
+    '(2, "John", "Doe", "j.doe@server.com", "secret", "DefaultStreet", "city"),' +
+    '(3, "Pepa", "Big", "p.big@server.com", "secret", "DefaultStreet", "city");';
 
 /**
  * Query om twee meals toe te voegen. Let op de cookId, die moet matchen
@@ -182,7 +182,8 @@ before((done) => {
                 lastName: 'Rose',
                 emailAdress: 'j.rose@domein.com',
                 password: 'Welkom01',
-                phoneNumber: '0612345678'
+                phoneNumber: '0612345678',
+                street: "DefaultStreet"
             })
             .end((err, res) => {
               res.should.have.status(201);
