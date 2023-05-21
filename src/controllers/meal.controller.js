@@ -31,6 +31,10 @@ const mealController = {
         }
       
           logger.trace('asserts completed')
+
+          let date = new Date(meal.dateTime); 
+          let mysqlDateTime = date.toISOString().slice(0, 19).replace('T', ' ');
+
       
           let sqlStatement = 
           'INSERT INTO `meal` (`name`, `description`, `imageUrl`, `dateTime`, `maxAmountOfParticipants`, `price`, `cookId`) VALUES' +
@@ -54,7 +58,7 @@ const mealController = {
                     meal.name,
                     meal.description,
                     meal.imageUrl,
-                    meal.dateTime,
+                    mysqlDateTime,
                     meal.maxAmountOfParticipants,
                     meal.price,
                     userId,
