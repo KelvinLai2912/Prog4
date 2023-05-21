@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "nodemon index.js",
-    "test": "NODE_ENV=test mocha test/**/*.test.js --exit"
+    "test": "NODE_ENV=test mocha test/**/*.test.js --exit",
+    "start": "npm-run-all test dev"
   },
   "author": "",
   "license": "ISC",
@@ -22,6 +23,7 @@
     "tracer": "^1.1.6"
   },
   "devDependencies": {
+    "concurrently": "^8.0.1",
     "mocha": "^10.2.0"
   }
 }
